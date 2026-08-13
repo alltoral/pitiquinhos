@@ -21,15 +21,13 @@
     padding: 0;
     background: #efefec;
     min-height: 100vh;
-    display: flex;
-    justify-content: center;
-    align-items: flex-start;
+    width: 100%;
     overflow-x: hidden;
   }
   #root {
     width: 100%;
     max-width: 520px;
-    min-width: 0;
+    margin: 0 auto;
     padding: max(24px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) max(24px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left));
     box-sizing: border-box;
   }
@@ -73,8 +71,6 @@ if ("serviceWorker" in navigator) {
     navigator.serviceWorker
       .register("sw.js", { updateViaCache: "none" })
       .then(function (reg) {
-        // Actively ask the browser to check for a newer sw.js right away,
-        // instead of waiting for its own internal update timer.
         reg.update().catch(function () {});
       })
       .catch(function (err) {
@@ -1864,7 +1860,7 @@ const CSS = `
 .dt-header-text h1 {
   font-family: 'Oi', cursive;
   font-weight: 400;
-  font-size: clamp(13px, calc(8vw - 13px), 28px);
+  font-size: clamp(14px, calc(9.8vw - 15px), 33px);
   line-height: 1;
   margin: 0;
   color: #34343a;
