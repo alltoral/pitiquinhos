@@ -1005,7 +1005,7 @@ function DogTracker() {
 
       <header className="dt-header">
         <div className="dt-header-mark">
-          <AppIcon size={80} />
+          <AppIcon size={76} />
         </div>
         <div className="dt-header-text">
           <h1>Pitiquinhos</h1>
@@ -1735,7 +1735,7 @@ function DogTracker() {
 
 // ---------- Styles ----------
 const CSS = `
-@import url('https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Quicksand:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Quicksand:wght@400;500;600;700&family=Oi&display=swap');
 
 .dt-root {
   --ink: #111111;
@@ -1767,20 +1767,20 @@ const CSS = `
 .dt-header {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 22px 20px 16px;
+  gap: 14px;
+  padding: 18px 18px 16px;
   border-bottom: 2px dashed var(--line);
   background: var(--paper-soft);
 }
 .dt-header-mark {
-  width: 88px;
-  height: 88px;
+  width: 84px;
+  height: 84px;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
 }
-.dt-header-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.dt-header-text { flex: 1; display: flex; align-items: center; justify-content: flex-end; min-width: 0; }
 .eyebrow {
   font-family: 'Quicksand', sans-serif;
   font-size: 11px;
@@ -1790,10 +1790,14 @@ const CSS = `
   font-weight: 700;
 }
 .dt-header-text h1 {
-  font-family: 'Baloo 2', sans-serif;
-  font-size: 22px;
-  font-weight: 700;
+  font-family: 'Oi', cursive;
+  font-weight: 400;
+  font-size: 32px;
+  line-height: 1;
   margin: 0;
+  color: #34343a;
+  text-align: right;
+  width: 100%;
 }
 
 .dt-tabs {
