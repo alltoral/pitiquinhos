@@ -70,9 +70,16 @@ if ("serviceWorker" in navigator) {
     window.location.reload();
   });
   window.addEventListener("load", function () {
-    navigator.serviceWorker.register("sw.js").catch(function (err) {
-      console.warn("Service worker registration failed:", err);
-    });
+    navigator.serviceWorker
+      .register("sw.js", { updateViaCache: "none" })
+      .then(function (reg) {
+        // Actively ask the browser to check for a newer sw.js right away,
+        // instead of waiting for its own internal update timer.
+        reg.update().catch(function () {});
+      })
+      .catch(function (err) {
+        console.warn("Service worker registration failed:", err);
+      });
   });
 }
 </script>
