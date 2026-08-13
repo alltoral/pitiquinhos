@@ -484,6 +484,8 @@ function DogTracker() {
   const [showLitterSticker, setShowLitterSticker] = useState(false);
   const [showRacaoSticker, setShowRacaoSticker] = useState(false);
   const [racaoOpen, setRacaoOpen] = useState(false);
+  const [statsOpenDog, setStatsOpenDog] = useState(false);
+  const [statsOpenCat, setStatsOpenCat] = useState(false);
   const [activeEffect, setActiveEffect] = useState(null);
   const [purchases, setPurchases] = useState([]);
   const [racaoDateInput, setRacaoDateInput] = useState(todayKey());
@@ -1396,70 +1398,112 @@ function DogTracker() {
             })()}
           </section>
 
-          <section className="card">
-            <SectionTitle eyebrow="Esta semana" title="Estatísticas — Maurício" />
-            <div className="week-summary">
-              <div className="week-summary-item">
-                <strong>{weekTotals.walks}</strong>
-                <span>passeios</span>
-              </div>
-              <div className="week-summary-item">
-                <strong>{weekTotals.poops}</strong>
-                <span>cocôs</span>
-              </div>
-              <div className="week-summary-item">
-                <strong>{weekFeedings}</strong>
-                <span>refeições</span>
-              </div>
-              <div className="week-summary-item">
-                <strong>{weekPeeDays}</strong>
-                <span>dias c/ xixi</span>
-              </div>
-              <div className="week-summary-item">
-                <strong>{weekRacaoKg}</strong>
-                <span>kg de ração</span>
-              </div>
+          <section className="card racao-card">
+            <div className="racao-card-header">
+              <SectionTitle eyebrow="Esta semana" title="Estatísticas — Maurício" />
+              <button
+                className="racao-toggle"
+                onClick={() => setStatsOpenDog((o) => !o)}
+                aria-label={statsOpenDog ? "Minimizar" : "Maximizar"}
+              >
+                <ExpandIcon size={16} expanded={statsOpenDog} />
+              </button>
             </div>
-            <WeekBarChart data={weekChartData} />
-            <div className="chart-legend">
-              <span>
-                <i className="legend-swatch legend-walks" /> Passeios
-              </span>
-              <span>
-                <i className="legend-swatch legend-poops" /> Cocôs
-              </span>
-            </div>
+
+            {statsOpenDog ? (
+              <>
+                <div className="week-summary">
+                  <div className="week-summary-item">
+                    <strong>{weekTotals.walks}</strong>
+                    <span>passeios</span>
+                  </div>
+                  <div className="week-summary-item">
+                    <strong>{weekTotals.poops}</strong>
+                    <span>cocôs</span>
+                  </div>
+                  <div className="week-summary-item">
+                    <strong>{weekFeedings}</strong>
+                    <span>refeições</span>
+                  </div>
+                  <div className="week-summary-item">
+                    <strong>{weekPeeDays}</strong>
+                    <span>dias c/ xixi</span>
+                  </div>
+                  <div className="week-summary-item">
+                    <strong>{weekRacaoKg}</strong>
+                    <span>kg de ração</span>
+                  </div>
+                </div>
+                <WeekBarChart data={weekChartData} />
+                <div className="chart-legend">
+                  <span>
+                    <i className="legend-swatch legend-walks" /> Passeios
+                  </span>
+                  <span>
+                    <i className="legend-swatch legend-poops" /> Cocôs
+                  </span>
+                </div>
+              </>
+            ) : (
+              <button className="racao-tag" onClick={() => setStatsOpenDog(true)}>
+                <Paw filled size={16} />
+                <span className="racao-tag-title">
+                  {weekTotals.walks} passeios · {weekTotals.poops} cocôs · {weekFeedings} refeições
+                </span>
+              </button>
+            )}
           </section>
 
-          <section className="card">
-            <SectionTitle eyebrow="Esta semana" title="Estatísticas — Fernando" />
-            <div className="week-summary">
-              <div className="week-summary-item">
-                <strong>{catWeekTotals.litter}</strong>
-                <span>trocas de areia</span>
-              </div>
-              <div className="week-summary-item">
-                <strong>{catWeekTotals.feedings}</strong>
-                <span>refeições</span>
-              </div>
-              <div className="week-summary-item">
-                <strong>{catWeekRacaoKg}</strong>
-                <span>kg de ração</span>
-              </div>
-              <div className="week-summary-item">
-                <strong>{catWeekAreiaKg}</strong>
-                <span>kg de areia</span>
-              </div>
+          <section className="card racao-card">
+            <div className="racao-card-header">
+              <SectionTitle eyebrow="Esta semana" title="Estatísticas — Fernando" />
+              <button
+                className="racao-toggle"
+                onClick={() => setStatsOpenCat((o) => !o)}
+                aria-label={statsOpenCat ? "Minimizar" : "Maximizar"}
+              >
+                <ExpandIcon size={16} expanded={statsOpenCat} />
+              </button>
             </div>
-            <WeekBarChart data={catWeekChartData} />
-            <div className="chart-legend">
-              <span>
-                <i className="legend-swatch legend-walks" /> Trocas de areia
-              </span>
-              <span>
-                <i className="legend-swatch legend-poops" /> Refeições
-              </span>
-            </div>
+
+            {statsOpenCat ? (
+              <>
+                <div className="week-summary">
+                  <div className="week-summary-item">
+                    <strong>{catWeekTotals.litter}</strong>
+                    <span>trocas de areia</span>
+                  </div>
+                  <div className="week-summary-item">
+                    <strong>{catWeekTotals.feedings}</strong>
+                    <span>refeições</span>
+                  </div>
+                  <div className="week-summary-item">
+                    <strong>{catWeekRacaoKg}</strong>
+                    <span>kg de ração</span>
+                  </div>
+                  <div className="week-summary-item">
+                    <strong>{catWeekAreiaKg}</strong>
+                    <span>kg de areia</span>
+                  </div>
+                </div>
+                <WeekBarChart data={catWeekChartData} />
+                <div className="chart-legend">
+                  <span>
+                    <i className="legend-swatch legend-walks" /> Trocas de areia
+                  </span>
+                  <span>
+                    <i className="legend-swatch legend-poops" /> Refeições
+                  </span>
+                </div>
+              </>
+            ) : (
+              <button className="racao-tag" onClick={() => setStatsOpenCat(true)}>
+                <LitterIcon size={16} />
+                <span className="racao-tag-title">
+                  {catWeekTotals.litter} trocas · {catWeekTotals.feedings} refeições
+                </span>
+              </button>
+            )}
           </section>
         </main>
       )}
@@ -1767,8 +1811,8 @@ const CSS = `
 .dt-header {
   display: flex;
   align-items: center;
-  gap: 14px;
-  padding: 18px 18px 16px;
+  gap: 10px;
+  padding: 18px 16px 16px;
   border-bottom: 2px dashed var(--line);
   background: var(--paper-soft);
 }
@@ -1780,7 +1824,7 @@ const CSS = `
   justify-content: center;
   flex-shrink: 0;
 }
-.dt-header-text { flex: 1; display: flex; align-items: center; justify-content: flex-end; min-width: 0; }
+.dt-header-text { flex: 1; display: flex; align-items: center; justify-content: flex-start; min-width: 0; overflow: hidden; }
 .eyebrow {
   font-family: 'Quicksand', sans-serif;
   font-size: 11px;
@@ -1792,12 +1836,15 @@ const CSS = `
 .dt-header-text h1 {
   font-family: 'Oi', cursive;
   font-weight: 400;
-  font-size: 32px;
+  font-size: clamp(22px, 8.5vw, 36px);
   line-height: 1;
   margin: 0;
   color: #34343a;
-  text-align: right;
+  text-align: left;
   width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: clip;
 }
 
 .dt-tabs {
