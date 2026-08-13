@@ -31,34 +31,278 @@
     padding: max(24px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) max(24px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left));
     box-sizing: border-box;
   }
+
+  #sync-gate {
+    width: calc(100% - 24px);
+    max-width: 480px;
+    margin: max(24px, env(safe-area-inset-top)) auto 24px;
+    padding: 28px 22px;
+    box-sizing: border-box;
+    background: #ffffff;
+    border: 2px solid #111111;
+    border-radius: 28px;
+    box-shadow: 0 12px 0 -6px #f4f4f2;
+    font-family: 'Quicksand', -apple-system, sans-serif;
+    color: #111111;
+  }
+  #sync-gate h2 {
+    font-family: 'Baloo 2', sans-serif;
+    font-size: 20px;
+    margin: 0 0 6px;
+  }
+  #sync-gate p { font-size: 14px; color: #6b6b66; line-height: 1.5; margin: 0 0 18px; }
+  #sync-gate .sg-code-display {
+    font-family: 'Baloo 2', sans-serif;
+    font-size: 30px;
+    letter-spacing: 0.12em;
+    text-align: center;
+    padding: 14px;
+    border: 2px dashed #111111;
+    border-radius: 16px;
+    margin-bottom: 14px;
+    background: #f4f4f2;
+  }
+  #sync-gate button {
+    width: 100%;
+    padding: 14px;
+    border-radius: 999px;
+    border: 2px solid #111111;
+    font-family: 'Quicksand', sans-serif;
+    font-weight: 700;
+    font-size: 15px;
+    cursor: pointer;
+    margin-bottom: 10px;
+    box-sizing: border-box;
+  }
+  #sync-gate .sg-primary { background: #111111; color: #ffffff; }
+  #sync-gate .sg-secondary { background: #ffffff; color: #111111; }
+  #sync-gate input[type="text"] {
+    width: 100%;
+    padding: 12px 14px;
+    border-radius: 999px;
+    border: 2px solid #111111;
+    font-family: 'Quicksand', sans-serif;
+    font-size: 15px;
+    box-sizing: border-box;
+    margin-bottom: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+  #sync-gate .sg-divider { text-align: center; color: #8a8a85; font-size: 12px; margin: 18px 0; text-transform: uppercase; letter-spacing: 0.1em; }
+  #sync-gate .sg-error { color: #b3261e; font-size: 13px; margin: -4px 0 10px; }
+  .sg-hidden { display: none !important; }
+  #sync-loading {
+    width: 100%;
+    max-width: 480px;
+    margin: 60px auto;
+    text-align: center;
+    font-family: 'Quicksand', sans-serif;
+    color: #8a8a85;
+  }
 </style>
 <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
 <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
 <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore-compat.js"></script>
 </head>
 <body>
+<div id="sync-loading">Carregando…</div>
+
+<div id="sync-gate" class="sg-hidden">
+  <div id="sg-choice">
+    <h2>Sincronizar entre aparelhos</h2>
+    <p>Crie um código de casa para começar, ou digite um código que você já tenha criado em outro aparelho.</p>
+    <button class="sg-primary" id="sg-create-btn">Criar código novo</button>
+    <div class="sg-divider">ou</div>
+    <input type="text" id="sg-join-input" placeholder="DIGITE O CÓDIGO" maxlength="10" />
+    <p class="sg-error sg-hidden" id="sg-join-error">Não encontrei esse código. Confira e tente de novo.</p>
+    <button class="sg-secondary" id="sg-join-btn">Entrar com esse código</button>
+  </div>
+  <div id="sg-created" class="sg-hidden">
+    <h2>Pronto! Sua casa foi criada</h2>
+    <p>Anote esse código — é ele que você vai digitar nos outros aparelhos (celular, computador etc.) para ver os mesmos dados aqui.</p>
+    <div class="sg-code-display" id="sg-code-shown"></div>
+    <button class="sg-primary" id="sg-continue-btn">Já anotei, continuar</button>
+  </div>
+</div>
+
 <div id="root"></div>
 <script>
+// ---------- Firebase / sync setup ----------
+var firebaseConfig = {
+  apiKey: "AIzaSyAlfqTGoKRJJ7knQPi5xM5J82E_9sEYfIs",
+  authDomain: "pitiquinhos-d1fa2.firebaseapp.com",
+  projectId: "pitiquinhos-d1fa2",
+  storageBucket: "pitiquinhos-d1fa2.firebasestorage.app",
+  messagingSenderId: "535539869841",
+  appId: "1:535539869841:web:20276fbc597081e2e17730"
+};
+firebase.initializeApp(firebaseConfig);
+var db = firebase.firestore();
+try {
+  db.enablePersistence({ synchronizeTabs: true }).catch(function () {});
+} catch (e) {}
+
+var SYNC_KEY = "pitiquinhos:synccode";
+var syncCache = {};
+var syncDocRef = null;
+var firstSnapshotSeen = false;
+
+function generateCode() {
+  var chars = "ABCDEFGHJKMNPQRSTUVWXYZ23456789"; // no 0/O/1/I/L to avoid confusion
+  var code = "";
+  for (var i = 0; i < 8; i++) code += chars[Math.floor(Math.random() * chars.length)];
+  return code;
+}
+
 window.storage = {
-  get: async function (key, shared) {
-    var raw = localStorage.getItem(key);
-    if (raw === null) throw new Error("Key not found: " + key);
-    return { key: key, value: raw, shared: !!shared };
+  get: async function (key) {
+    if (!(key in syncCache)) throw new Error("Key not found: " + key);
+    return { key: key, value: syncCache[key], shared: false };
   },
-  set: async function (key, value, shared) {
-    localStorage.setItem(key, value);
-    return { key: key, value: value, shared: !!shared };
+  set: async function (key, value) {
+    syncCache[key] = value;
+    var patch = {};
+    patch[key] = value;
+    try {
+      await syncDocRef.set(patch, { merge: true });
+    } catch (e) {
+      console.warn("Sync write failed (will retry when online):", e);
+    }
+    return { key: key, value: value, shared: false };
   },
-  delete: async function (key, shared) {
-    localStorage.removeItem(key);
-    return { key: key, deleted: true, shared: !!shared };
+  delete: async function (key) {
+    delete syncCache[key];
+    var patch = {};
+    patch[key] = firebase.firestore.FieldValue.delete();
+    try {
+      await syncDocRef.update(patch);
+    } catch (e) {
+      console.warn("Sync delete failed:", e);
+    }
+    return { key: key, deleted: true, shared: false };
   },
-  list: async function (prefix, shared) {
+  list: async function (prefix) {
     var p = prefix || "";
-    var keys = Object.keys(localStorage).filter(function (k) { return k.indexOf(p) === 0; });
-    return { keys: keys, prefix: prefix, shared: !!shared };
+    var keys = Object.keys(syncCache).filter(function (k) { return k.indexOf(p) === 0; });
+    return { keys: keys, prefix: prefix, shared: false };
   }
 };
+
+function showRemoteUpdateBanner() {
+  if (document.getElementById("sync-update-banner")) return;
+  var banner = document.createElement("div");
+  banner.id = "sync-update-banner";
+  banner.style.cssText =
+    "position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:9999;" +
+    "background:#111111;color:#ffffff;padding:12px 18px;border-radius:999px;" +
+    "font-family:Quicksand,sans-serif;font-size:13px;font-weight:700;cursor:pointer;" +
+    "box-shadow:0 6px 20px rgba(0,0,0,0.25);";
+  banner.textContent = "Novos dados sincronizados — toque para atualizar";
+  banner.onclick = function () { window.location.reload(); };
+  document.body.appendChild(banner);
+}
+
+function startSnapshotListener() {
+  syncDocRef.onSnapshot({ includeMetadataChanges: true }, function (snap) {
+    if (!snap.metadata.hasPendingWrites) {
+      var data = snap.data() || {};
+      if (firstSnapshotSeen) {
+        var changed = JSON.stringify(data) !== JSON.stringify(syncCache);
+        if (changed) {
+          syncCache = data;
+          showRemoteUpdateBanner();
+        }
+      }
+      firstSnapshotSeen = true;
+    }
+  });
+}
+
+async function connectToHousehold(code) {
+  syncDocRef = db.collection("households").doc(code);
+  var snap = await syncDocRef.get();
+  syncCache = snap.data() || {};
+  localStorage.setItem(SYNC_KEY, code);
+  startSnapshotListener();
+  document.getElementById("sync-loading").style.display = "none";
+  document.getElementById("sync-gate").classList.add("sg-hidden");
+  window.__renderApp();
+}
+
+function showGateError(msg) {
+  var el = document.getElementById("sg-join-error");
+  el.textContent = msg;
+  el.classList.remove("sg-hidden");
+}
+
+function initSyncFlow() {
+  var savedCode = localStorage.getItem(SYNC_KEY);
+  if (savedCode) {
+    connectToHousehold(savedCode).catch(function (e) {
+      console.error(e);
+      document.getElementById("sync-loading").textContent =
+        "Não consegui conectar. Verifique sua internet e recarregue a página.";
+    });
+    return;
+  }
+
+  document.getElementById("sync-loading").style.display = "none";
+  document.getElementById("sync-gate").classList.remove("sg-hidden");
+
+  document.getElementById("sg-create-btn").onclick = async function () {
+    this.disabled = true;
+    this.textContent = "Criando…";
+    var code = generateCode();
+    try {
+      await db.collection("households").doc(code).set({}, { merge: true });
+      document.getElementById("sg-choice").classList.add("sg-hidden");
+      document.getElementById("sg-created").classList.remove("sg-hidden");
+      document.getElementById("sg-code-shown").textContent = code;
+      document.getElementById("sg-continue-btn").onclick = function () {
+        connectToHousehold(code).catch(function (e) {
+          console.error(e);
+          alert("Não consegui conectar. Verifique sua internet e tente de novo.");
+        });
+      };
+    } catch (e) {
+      console.error(e);
+      this.disabled = false;
+      this.textContent = "Criar código novo";
+      alert("Não consegui criar o código. Verifique sua internet e tente de novo.");
+    }
+  };
+
+  document.getElementById("sg-join-btn").onclick = async function () {
+    var input = document.getElementById("sg-join-input");
+    var code = input.value.trim().toUpperCase();
+    document.getElementById("sg-join-error").classList.add("sg-hidden");
+    if (!code) return;
+    this.disabled = true;
+    this.textContent = "Entrando…";
+    try {
+      var snap = await db.collection("households").doc(code).get();
+      if (!snap.exists) {
+        showGateError("Não encontrei esse código. Confira e tente de novo.");
+        this.disabled = false;
+        this.textContent = "Entrar com esse código";
+        return;
+      }
+      connectToHousehold(code).catch(function (e) {
+        console.error(e);
+        alert("Não consegui conectar. Verifique sua internet e tente de novo.");
+      });
+    } catch (e) {
+      console.error(e);
+      showGateError("Algo deu errado. Verifique sua internet e tente de novo.");
+      this.disabled = false;
+      this.textContent = "Entrar com esse código";
+    }
+  };
+}
+
+initSyncFlow();
 
 if ("serviceWorker" in navigator) {
   var swRefreshed = false;
@@ -523,6 +767,13 @@ function DogTracker() {
   const [catRacaoDateInput, setCatRacaoDateInput] = useState(todayKey());
   const [catRacaoAmountInput, setCatRacaoAmountInput] = useState("");
   const [backupMessage, setBackupMessage] = useState(null);
+  const [syncCode] = useState(() => {
+    try {
+      return window.localStorage.getItem("pitiquinhos:synccode") || "";
+    } catch {
+      return "";
+    }
+  });
   const key = todayKey();
 
   const loadDay = useCallback(async (k) => {
@@ -1769,6 +2020,29 @@ function DogTracker() {
         </main>
       )}
 
+      {syncCode && (
+        <div className="sync-row">
+          <span className="sync-code-label">
+            Sincronizado · <strong>{syncCode}</strong>
+          </span>
+          <button
+            className="backup-link"
+            onClick={() => {
+              if (
+                window.confirm(
+                  "Isso desconecta este aparelho da sincronização. Você pode reconectar depois com um código. Continuar?"
+                )
+              ) {
+                window.localStorage.removeItem("pitiquinhos:synccode");
+                window.location.reload();
+              }
+            }}
+          >
+            Trocar código
+          </button>
+        </div>
+      )}
+
       <div className="backup-row">
         <button className="backup-link" onClick={exportBackup}>
           Baixar backup
@@ -2463,6 +2737,22 @@ const CSS = `
 .legend-walks { background: var(--ink); }
 .legend-poops { background: var(--paper); }
 
+.sync-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 0 18px;
+  margin-top: 6px;
+}
+.sync-code-label {
+  font-family: 'Quicksand', sans-serif;
+  font-size: 10.5px;
+  color: var(--muted);
+  letter-spacing: 0.04em;
+}
+.sync-code-label strong { color: var(--ink); letter-spacing: 0.08em; }
+
 .backup-row {
   display: flex;
   align-items: center;
@@ -2524,12 +2814,11 @@ const CSS = `
 }
 `;
 
-
 const root = ReactDOM.createRoot(document.getElementById("root"));
 root.render(<DogTracker />);
 </script>
 <script>
-(function () {
+window.__renderApp = function () {
   var source = document.getElementById("app-source").textContent;
   var output = Babel.transform(source, {
     presets: [["react", { runtime: "classic" }]]
@@ -2537,7 +2826,7 @@ root.render(<DogTracker />);
   var script = document.createElement("script");
   script.text = output;
   document.body.appendChild(script);
-})();
+};
 </script>
 </body>
 </html>
