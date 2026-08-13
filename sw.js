@@ -1,4 +1,4 @@
-const CACHE_NAME = "pitiquinhos-v1";
+const CACHE_NAME = "pitiquinhos-v2";
 const ASSETS = [
   "./",
   "./index.html",
@@ -23,24 +23,23 @@ self.addEventListener("activate", (event) => {
   self.clients.claim();
 });
 
-// Cache-first for our own files, network-first fallback for everything else (e.g. CDN scripts)
+// Network-first: always try to fetch the latest version first, so updates
+// show up immediately. Only fall back to the cached copy if the network
+// request fails (e.g. offline). This avoids ever getting "stuck" on an old
+// cached version of the app.
 self.addEventListener("fetch", (event) => {
   const req = event.request;
   if (req.method !== "GET") return;
 
   event.respondWith(
-    caches.match(req).then((cached) => {
-      if (cached) return cached;
-      return fetch(req)
-        .then((res) => {
-          // Only cache same-origin, successful responses
-          if (res && res.status === 200 && new URL(req.url).origin === self.location.origin) {
-            const resClone = res.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(req, resClone));
-          }
-          return res;
-        })
-        .catch(() => cached);
-    })
+    fetch(req)
+      .then((res) => {
+        if (res && res.status === 200 && new URL(req.url).origin === self.location.origin) {
+          const resClone = res.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(req, resClone));
+        }
+        return res;
+      })
+      .catch(() => caches.match(req))
   );
 });
