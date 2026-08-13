@@ -55,7 +55,9 @@ if ("serviceWorker" in navigator) {
   });
 }
 </script>
-<script type="text/babel" data-presets="react">
+<script type="text/plain" id="app-source">
+const { useState, useEffect, useCallback } = React;
+
 // ---------- Helpers ----------
 const todayKey = () => {
   const d = new Date();
@@ -2467,8 +2469,20 @@ const CSS = `
 }
 `;
 
+
 const root = ReactDOM.createRoot(document.getElementById("root"));
 root.render(<DogTracker />);
+</script>
+<script>
+(function () {
+  var source = document.getElementById("app-source").textContent;
+  var output = Babel.transform(source, {
+    presets: [["react", { runtime: "classic" }]]
+  }).code;
+  var script = document.createElement("script");
+  script.text = output;
+  document.body.appendChild(script);
+})();
 </script>
 </body>
 </html>
